@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hayaan Birthday (3rd) — Checklist</title>
+<style>
+  :root{
+    --ink:#1f2430; --muted:#6b7280; --line:#e5e7eb; --accent:#2563eb;
+    --done:#16a34a; --bg:#fafafa; --danger:#dc2626; --warn:#d97706;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; padding:20px 12px 80px; background:var(--bg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink); max-width:960px; margin-left:auto; margin-right:auto;
+  }
+  h1{font-size:1.25rem; margin:0 0 2px;}
+  .sub{color:var(--muted); font-size:0.85rem; margin-bottom:14px;}
+  .stats{
+    display:flex; flex-wrap:wrap; gap:10px 18px; margin-bottom:14px; font-size:0.85rem; color:var(--muted);
+  }
+  .stats b{color:var(--ink);}
+  .controls{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;}
+  .controls input[type=search]{
+    flex:1; min-width:160px; padding:9px 10px; border:1px solid var(--line); border-radius:8px; font-size:0.9rem;
+  }
+  .cat-filters{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px;}
+  .cat-chip{
+    padding:5px 11px; border-radius:999px; border:1px solid var(--line); background:#fff;
+    font-size:0.78rem; color:var(--muted); cursor:pointer; white-space:nowrap;
+  }
+  .cat-chip.active{background:var(--accent); color:#fff; border-color:var(--accent);}
+  .add-form{
+    display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;
+  }
+  .add-form input, .add-form select{
+    padding:9px 10px; border:1px solid var(--line); border-radius:8px; font-size:0.9rem;
+  }
+  .add-form input[name=name]{flex:1; min-width:130px;}
+  .add-form input[name=count]{width:70px;}
+  .add-form select[name=category]{width:130px;}
+  .add-form button{
+    padding:9px 16px; border:none; background:var(--accent); color:#fff;
+    border-radius:8px; font-size:0.9rem; cursor:pointer;
+  }
+  table{width:100%; border-collapse:collapse; background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.06);}
+  thead th{
+    text-align:left; font-size:0.7rem; text-transform:uppercase; letter-spacing:.03em;
+    color:var(--muted); padding:10px 6px; border-bottom:1px solid var(--line); white-space:nowrap;
+  }
+  th.num, td.num{text-align:center;}
+  th.chk, td.chk{text-align:center;}
+  th.act, td.act{text-align:center; width:56px;}
+  tbody tr{border-bottom:1px solid var(--line);}
+  tbody tr:last-child{border-bottom:none;}
+  tbody tr.done{background:#f0fdf4;}
+  tbody tr.unreachable{background:#fef2f2;}
+  td{padding:8px 6px; font-size:0.86rem; vertical-align:middle;}
+  td.name{font-weight:500;}
+  td.cat{color:var(--muted); font-size:0.78rem;}
+  td.name[contenteditable], td.num[contenteditable]{cursor:text; border-radius:4px;}
+  td.name[contenteditable]:focus, td.num[contenteditable]:focus{
+    outline:2px solid var(--accent); background:#eff6ff;
+  }
+  select.status{
+    padding:5px 6px; border-radius:6px; border:1px solid var(--line); font-size:0.78rem; background:#fff;
+  }
+  select.status.called{color:var(--accent); border-color:var(--accent);}
+  select.status.unreachable{color:var(--danger); border-color:var(--danger);}
+  input[type=checkbox]{width:19px; height:19px; accent-color:var(--done); cursor:pointer;}
+  .del{
+    border:none; background:none; color:var(--danger); font-size:1rem; cursor:pointer; padding:2px 6px;
+  }
+  .toolbar{margin-top:16px; display:flex; gap:10px; flex-wrap:wrap;}
+  .toolbar button{
+    padding:8px 14px; border:1px solid var(--line); background:#fff;
+    border-radius:8px; font-size:0.85rem; color:var(--muted); cursor:pointer;
+  }
+  .hint{font-size:0.75rem; color:var(--muted); margin-top:6px;}
+
+  @media print{
+    body{padding:0; background:#fff;}
+    .controls, .cat-filters, .add-form, .toolbar, .hint, td.act, th.act{display:none !important;}
+    table{box-shadow:none;}
+    select.status{border:none; background:none; -webkit-appearance:none; appearance:none;}
+  }
+</style>
+</head>
+<body>
+
+<h1>Hayaan's 3rd Birthday — Guest &amp; Vendor Checklist</h1>
+<div class="sub">Search, filter by category, mark call status, and check off confirmed. Saved automatically on this device.</div>
+
+<div class="stats" id="stats"></div>
+
+<div class="controls">
+  <input type="search" id="searchBox" placeholder="Search by name…">
+</div>
+<div class="cat-filters" id="catFilters"></div>
+
+<form class="add-form" id="addForm">
+  <input type="text" name="name" placeholder="Name" required>
+  <input type="number" name="count" placeholder="Count" min="1" value="1" required>
+  <select name="category">
+    <option value="Family/Friends">Family/Friends</option>
+    <option value="Vendor">Vendor</option>
+    <option value="Government">Government</option>
+    <option value="Finance">Finance</option>
+    <option value="Other">Other</option>
+  </select>
+  <button type="submit">Add</button>
+</form>
+
+<table>
+  <thead>
+    <tr>
+      <th class="num">#</th>
+      <th>Name</th>
+      <th>Category</th>
+      <th class="num">Count</th>
+      <th>Status</th>
+      <th class="chk">Confirmed</th>
+      <th class="act">Remove</th>
+    </tr>
+  </thead>
+  <tbody id="rows"></tbody>
+</table>
+<div class="hint">Click a name/count to edit it inline. Use the Status dropdown for Pending / Called / Not Reachable.</div>
+
+<div class="toolbar">
+  <button onclick="resetChecks()">Reset all statuses</button>
+  <button onclick="exportJSON()">Export list (JSON)</button>
+  <button onclick="window.print()">Print list</button>
+</div>
+
+<script>
+const STORAGE_KEY = 'hayaan-birthday-checklist-v2';
+
+const defaultData = [
+  ["Home", 5, "Family/Friends"], ["Shinu", 4, "Family/Friends"], ["Devan", 4, "Family/Friends"],
+  ["Nadeera", 4, "Family/Friends"], ["LSGD", 6, "Government"], ["NREGS", 4, "Government"],
+  ["Block", 6, "Government"], ["Kudallur", 7, "Family/Friends"], ["Vasu", 3, "Family/Friends"],
+  ["Saradha", 1, "Family/Friends"], ["Radha", 2, "Family/Friends"], ["Komala", 4, "Family/Friends"],
+  ["Saru", 3, "Family/Friends"], ["Shaji", 2, "Family/Friends"], ["Girija", 4, "Family/Friends"],
+  ["Sanal", 2, "Family/Friends"], ["Viswa Maman", 2, "Family/Friends"], ["Poshukka", 2, "Family/Friends"],
+  ["Cireesh", 2, "Family/Friends"], ["Haridasan", 2, "Family/Friends"], ["Manoharan", 2, "Family/Friends"],
+  ["Valyamma", 3, "Family/Friends"], ["Vijayan Bank", 2, "Finance"], ["Devi Finance", 2, "Finance"],
+  ["Sadheesan Nakkola", 1, "Family/Friends"], ["Shyni Chechi", 1, "Family/Friends"], ["Divya", 2, "Family/Friends"],
+  ["Thanavadu", 1, "Family/Friends"], ["Rajan BSNL", 2, "Other"], ["Saji Maman", 1, "Family/Friends"],
+  ["Mukesh bhai & Team", 5, "Vendor"], ["Sudhi", 1, "Family/Friends"], ["Kadakkadayil", 2, "Family/Friends"],
+  ["Sumesh", 3, "Family/Friends"], ["Sadhiyettan", 2, "Family/Friends"], ["Prabha - Pappan", 1, "Family/Friends"],
+  ["Narayanan", 2, "Family/Friends"], ["Sundaran", 1, "Family/Friends"], ["Haridasan (2)", 1, "Family/Friends"],
+  ["Rajan", 1, "Family/Friends"], ["Sreedharan", 1, "Family/Friends"], ["Balakrishnan", 1, "Family/Friends"],
+  ["Biji", 1, "Family/Friends"], ["Ramitha", 1, "Family/Friends"], ["Subi", 1, "Family/Friends"],
+  ["Akbarkka", 1, "Family/Friends"], ["Aducha Veed", 1, "Family/Friends"], ["Shanithatha", 1, "Family/Friends"],
+  ["Aji", 2, "Family/Friends"], ["Mariyatha", 1, "Family/Friends"], ["Chadothhayil", 1, "Family/Friends"],
+  ["Kudallur Midhun & Sons", 2, "Vendor"], ["Junil", 2, "Family/Friends"], ["Alwin", 1, "Family/Friends"],
+  ["Hari", 1, "Family/Friends"], ["Gilbert", 1, "Family/Friends"], ["Fasim", 2, "Family/Friends"],
+  ["Rashid", 2, "Family/Friends"], ["Sambath", 1, "Family/Friends"], ["Danish", 1, "Family/Friends"],
+];
+
+function loadData() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) {
+    try { return JSON.parse(raw); } catch (e) { /* fall through */ }
+  }
+  return defaultData.map((item, i) => ({
+    id: i, name: item[0], count: item[1], category: item[2],
+    status: 'pending', confirmed: false
+  }));
+}
+
+let data = loadData();
+let searchTerm = '';
+let activeCategory = 'All';
+
+function saveData() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function nextId() {
+  return data.length ? Math.max(...data.map(d => d.id)) + 1 : 0;
+}
+
+function getCategories() {
+  return ['All', ...new Set(data.map(d => d.category || 'Other'))];
+}
+
+function renderFilters() {
+  const wrap = document.getElementById('catFilters');
+  wrap.innerHTML = '';
+  getCategories().forEach(cat => {
+    const chip = document.createElement('button');
+    chip.className = 'cat-chip' + (cat === activeCategory ? ' active' : '');
+    chip.textContent = cat;
+    chip.onclick = () => { activeCategory = cat; render(); };
+    wrap.appendChild(chip);
+  });
+}
+
+function filteredData() {
+  return data.filter(d => {
+    const matchesSearch = d.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCat = activeCategory === 'All' || d.category === activeCategory;
+    return matchesSearch && matchesCat;
+  });
+}
+
+function render() {
+  renderFilters();
+  const tbody = document.getElementById('rows');
+  tbody.innerHTML = '';
+  const list = filteredData();
+  list.forEach((item, idx) => {
+    const tr = document.createElement('tr');
+    tr.className = item.confirmed ? 'done' : (item.status === 'unreachable' ? 'unreachable' : '');
+    tr.innerHTML = `
+      <td class="num">${idx + 1}</td>
+      <td class="name" contenteditable="true" data-id="${item.id}" data-field="name">${item.name}</td>
+      <td class="cat">${item.category || 'Other'}</td>
+      <td class="num" contenteditable="true" data-id="${item.id}" data-field="count">${item.count}</td>
+      <td>
+        <select class="status ${item.status}" data-id="${item.id}">
+          <option value="pending" ${item.status==='pending'?'selected':''}>Pending</option>
+          <option value="called" ${item.status==='called'?'selected':''}>Called</option>
+          <option value="unreachable" ${item.status==='unreachable'?'selected':''}>Not reachable</option>
+        </select>
+      </td>
+      <td class="chk"><input type="checkbox" ${item.confirmed ? 'checked' : ''} data-id="${item.id}"></td>
+      <td class="act"><button class="del" data-id="${item.id}" title="Remove">✕</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  attachHandlers();
+  renderStats();
+}
+
+function attachHandlers() {
+  document.querySelectorAll('select.status').forEach(sel => {
+    sel.addEventListener('change', e => {
+      const id = Number(e.target.dataset.id);
+      const item = data.find(d => d.id === id);
+      item.status = e.target.value;
+      saveData();
+      render();
+    });
+  });
+  document.querySelectorAll('td.chk input[type=checkbox]').forEach(cb => {
+    cb.addEventListener('change', e => {
+      const id = Number(e.target.dataset.id);
+      const item = data.find(d => d.id === id);
+      item.confirmed = e.target.checked;
+      saveData();
+      render();
+    });
+  });
+  document.querySelectorAll('td[contenteditable]').forEach(td => {
+    td.addEventListener('blur', e => {
+      const id = Number(e.target.dataset.id);
+      const field = e.target.dataset.field;
+      const item = data.find(d => d.id === id);
+      if (field === 'count') {
+        const n = parseInt(e.target.textContent, 10);
+        item.count = isNaN(n) ? 0 : n;
+      } else {
+        item.name = e.target.textContent.trim();
+      }
+      saveData();
+      renderStats();
+    });
+  });
+  document.querySelectorAll('.del').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const id = Number(e.target.dataset.id);
+      if (confirm('Remove this entry?')) {
+        data = data.filter(d => d.id !== id);
+        saveData();
+        render();
+      }
+    });
+  });
+}
+
+function renderStats() {
+  const totalEntries = data.length;
+  const totalCount = data.reduce((s, d) => s + (Number(d.count) || 0), 0);
+  const calledCount = data.filter(d => d.status === 'called' || d.status === 'unreachable').length;
+  const unreachableCount = data.filter(d => d.status === 'unreachable').length;
+  const confirmedCount = data.filter(d => d.confirmed).length;
+  const confirmedSum = data.filter(d => d.confirmed).reduce((s, d) => s + (Number(d.count) || 0), 0);
+
+  document.getElementById('stats').innerHTML = `
+    <div>Entries: <b>${totalEntries}</b></div>
+    <div>Total count: <b>${totalCount}</b></div>
+    <div>Called: <b>${calledCount}</b>/${totalEntries}</div>
+    <div>Not reachable: <b>${unreachableCount}</b></div>
+    <div>Confirmed: <b>${confirmedCount}</b>/${totalEntries} (total <b>${confirmedSum}</b>)</div>
+  `;
+}
+
+document.getElementById('searchBox').addEventListener('input', e => {
+  searchTerm = e.target.value;
+  render();
+});
+
+document.getElementById('addForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const form = e.target;
+  const name = form.name.value.trim();
+  const count = parseInt(form.count.value, 10) || 1;
+  const category = form.category.value;
+  if (!name) return;
+  data.push({ id: nextId(), name, count, category, status: 'pending', confirmed: false });
+  saveData();
+  form.reset();
+  form.count.value = 1;
+  render();
+});
+
+function resetChecks() {
+  if (!confirm('Clear all call statuses and confirmations?')) return;
+  data.forEach(d => { d.status = 'pending'; d.confirmed = false; });
+  saveData();
+  render();
+}
+
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'hayaan-birthday-checklist.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+render();
+</script>
+</body>
+</html>
