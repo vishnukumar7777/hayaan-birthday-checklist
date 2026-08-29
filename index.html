@@ -59,6 +59,9 @@
   td{padding:8px 6px; font-size:0.86rem; vertical-align:middle;}
   td.name{font-weight:500;}
   td.cat{color:var(--muted); font-size:0.78rem;}
+  select.cat-select{
+    padding:5px 6px; border-radius:6px; border:1px solid var(--line); font-size:0.78rem; background:#fff; color:var(--muted);
+  }
   td.name[contenteditable], td.num[contenteditable]{cursor:text; border-radius:4px;}
   td.name[contenteditable]:focus, td.num[contenteditable]:focus{
     outline:2px solid var(--accent); background:#eff6ff;
@@ -83,7 +86,7 @@
     body{padding:0; background:#fff;}
     .controls, .cat-filters, .add-form, .toolbar, .hint, td.act, th.act{display:none !important;}
     table{box-shadow:none;}
-    select.status{border:none; background:none; -webkit-appearance:none; appearance:none;}
+    select.status, select.cat-select{border:none; background:none; -webkit-appearance:none; appearance:none;}
   }
 </style>
 </head>
@@ -91,6 +94,9 @@
 
 <h1>Hayaan's 3rd Birthday — Guest &amp; Vendor Checklist</h1>
 <div class="sub">Search, filter by category, mark call status, and check off confirmed. Saved automatically on this device.</div>
+<div id="storageWarning" style="display:none; background:#fef2f2; color:#b91c1c; padding:8px 12px; border-radius:8px; font-size:0.8rem; margin-bottom:12px;">
+  This browser/window is blocking saved data (common in private/incognito mode or some preview windows). Your changes will work during this session, but won't be remembered after you close the tab — use "Export list" before closing if you need to keep them.
+</div>
 
 <div class="stats" id="stats"></div>
 
@@ -126,9 +132,11 @@
   </thead>
   <tbody id="rows"></tbody>
 </table>
-<div class="hint">Click a name/count to edit it inline. Use the Status dropdown for Pending / Called / Not Reachable.</div>
+<div class="hint">Click a name or count to edit it inline. Use the Category and Status dropdowns to change either per person.</div>
 
 <div class="toolbar">
+  <button onclick="saveData()">💾 Save now</button>
+  <span id="saveStatus" style="font-size:0.8rem; align-self:center;"></span>
   <button onclick="resetChecks()">Reset all statuses</button>
   <button onclick="exportJSON()">Export list (JSON)</button>
   <button onclick="window.print()">Print list</button>
@@ -161,7 +169,12 @@ const defaultData = [
 ];
 
 function loadData() {
-  const raw = localStorage.getItem(STORAGE_KEY);
+  let raw = null;
+  try {
+    raw = localStorage.getItem(STORAGE_KEY);
+  } catch (e) {
+    raw = null;
+  }
   if (raw) {
     try { return JSON.parse(raw); } catch (e) { /* fall through */ }
   }
@@ -175,8 +188,35 @@ let data = loadData();
 let searchTerm = '';
 let activeCategory = 'All';
 
+(function checkStorage() {
+  try {
+    const testKey = '__storage_test__';
+    localStorage.setItem(testKey, '1');
+    localStorage.removeItem(testKey);
+  } catch (e) {
+    document.addEventListener('DOMContentLoaded', () => {
+      const warn = document.getElementById('storageWarning');
+      if (warn) warn.style.display = 'block';
+    });
+  }
+})();
+
 function saveData() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    showStatus('Saved ✓', false);
+  } catch (e) {
+    showStatus('Could not save on this device — use Export to back up your list', true);
+  }
+}
+
+function showStatus(msg, isError) {
+  const el = document.getElementById('saveStatus');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.color = isError ? 'var(--danger)' : 'var(--done)';
+  clearTimeout(showStatus._t);
+  showStatus._t = setTimeout(() => { el.textContent = ''; }, 2000);
 }
 
 function nextId() {
@@ -218,7 +258,15 @@ function render() {
     tr.innerHTML = `
       <td class="num">${idx + 1}</td>
       <td class="name" contenteditable="true" data-id="${item.id}" data-field="name">${item.name}</td>
-      <td class="cat">${item.category || 'Other'}</td>
+      <td class="cat">
+        <select class="cat-select" data-id="${item.id}">
+          <option value="Family/Friends" ${item.category==='Family/Friends'?'selected':''}>Family/Friends</option>
+          <option value="Vendor" ${item.category==='Vendor'?'selected':''}>Vendor</option>
+          <option value="Government" ${item.category==='Government'?'selected':''}>Government</option>
+          <option value="Finance" ${item.category==='Finance'?'selected':''}>Finance</option>
+          <option value="Other" ${item.category==='Other'?'selected':''}>Other</option>
+        </select>
+      </td>
       <td class="num" contenteditable="true" data-id="${item.id}" data-field="count">${item.count}</td>
       <td>
         <select class="status ${item.status}" data-id="${item.id}">
@@ -237,6 +285,15 @@ function render() {
 }
 
 function attachHandlers() {
+  document.querySelectorAll('select.cat-select').forEach(sel => {
+    sel.addEventListener('change', e => {
+      const id = Number(e.target.dataset.id);
+      const item = data.find(d => d.id === id);
+      item.category = e.target.value;
+      saveData();
+      render();
+    });
+  });
   document.querySelectorAll('select.status').forEach(sel => {
     sel.addEventListener('change', e => {
       const id = Number(e.target.dataset.id);
