@@ -17,6 +17,14 @@
   }
   h1{font-size:1.25rem; margin:0 0 2px;}
   .sub{color:var(--muted); font-size:0.85rem; margin-bottom:14px;}
+  .sync-badge{
+    display:inline-flex; align-items:center; gap:6px; font-size:0.78rem; padding:4px 10px;
+    border-radius:999px; margin-bottom:14px; font-weight:500;
+  }
+  .sync-badge.ok{background:#f0fdf4; color:var(--done);}
+  .sync-badge.wait{background:#fffbeb; color:var(--warn);}
+  .sync-badge.err{background:#fef2f2; color:var(--danger);}
+  .dot{width:8px; height:8px; border-radius:50%; background:currentColor;}
   .stats{
     display:flex; flex-wrap:wrap; gap:10px 18px; margin-bottom:14px; font-size:0.85rem; color:var(--muted);
   }
@@ -44,6 +52,7 @@
     padding:9px 16px; border:none; background:var(--accent); color:#fff;
     border-radius:8px; font-size:0.9rem; cursor:pointer;
   }
+  .add-form button:disabled{opacity:0.5; cursor:not-allowed;}
   table{width:100%; border-collapse:collapse; background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.06);}
   thead th{
     text-align:left; font-size:0.7rem; text-transform:uppercase; letter-spacing:.03em;
@@ -75,7 +84,7 @@
   .del{
     border:none; background:none; color:var(--danger); font-size:1rem; cursor:pointer; padding:2px 6px;
   }
-  .toolbar{margin-top:16px; display:flex; gap:10px; flex-wrap:wrap;}
+  .toolbar{margin-top:16px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
   .toolbar button{
     padding:8px 14px; border:1px solid var(--line); background:#fff;
     border-radius:8px; font-size:0.85rem; color:var(--muted); cursor:pointer;
@@ -84,7 +93,7 @@
 
   @media print{
     body{padding:0; background:#fff;}
-    .controls, .cat-filters, .add-form, .toolbar, .hint, td.act, th.act{display:none !important;}
+    .controls, .cat-filters, .add-form, .toolbar, .hint, .sync-badge, td.act, th.act{display:none !important;}
     table{box-shadow:none;}
     select.status, select.cat-select{border:none; background:none; -webkit-appearance:none; appearance:none;}
   }
@@ -93,10 +102,8 @@
 <body>
 
 <h1>Hayaan's 3rd Birthday — Guest &amp; Vendor Checklist</h1>
-<div class="sub">Search, filter by category, mark call status, and check off confirmed. Saved automatically on this device.</div>
-<div id="storageWarning" style="display:none; background:#fef2f2; color:#b91c1c; padding:8px 12px; border-radius:8px; font-size:0.8rem; margin-bottom:12px;">
-  This browser/window is blocking saved data (common in private/incognito mode or some preview windows). Your changes will work during this session, but won't be remembered after you close the tab — use "Export list" before closing if you need to keep them.
-</div>
+<div class="sub">Search, filter by category, mark call status, and check off confirmed. Synced live across every device.</div>
+<div class="sync-badge wait" id="syncBadge"><span class="dot"></span><span id="syncText">Connecting…</span></div>
 
 <div class="stats" id="stats"></div>
 
@@ -115,7 +122,7 @@
     <option value="Finance">Finance</option>
     <option value="Other">Other</option>
   </select>
-  <button type="submit">Add</button>
+  <button type="submit" id="addBtn" disabled>Add</button>
 </form>
 
 <table>
@@ -132,18 +139,30 @@
   </thead>
   <tbody id="rows"></tbody>
 </table>
-<div class="hint">Click a name or count to edit it inline. Use the Category and Status dropdowns to change either per person.</div>
+<div class="hint">Click a name or count to edit it inline. Use the Category and Status dropdowns to change either per person. Changes sync to every device automatically.</div>
 
 <div class="toolbar">
-  <button onclick="saveData()">💾 Save now</button>
-  <span id="saveStatus" style="font-size:0.8rem; align-self:center;"></span>
   <button onclick="resetChecks()">Reset all statuses</button>
   <button onclick="exportJSON()">Export list (JSON)</button>
   <button onclick="window.print()">Print list</button>
 </div>
 
+<!-- Firebase (compat build — no bundler needed) -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script>
-const STORAGE_KEY = 'hayaan-birthday-checklist-v2';
+const firebaseConfig = {
+  apiKey: "AIzaSyB35tEvhwekiIhsT8D4vZVpdXUIBj8z768",
+  authDomain: "hayaan-birthday.firebaseapp.com",
+  projectId: "hayaan-birthday",
+  storageBucket: "hayaan-birthday.firebasestorage.app",
+  messagingSenderId: "905808235056",
+  appId: "1:905808235056:web:6feb88368bf8db2ffdfbf5"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const docRef = db.collection('checklist').doc('main');
 
 const defaultData = [
   ["Home", 5, "Family/Friends"], ["Shinu", 4, "Family/Friends"], ["Devan", 4, "Family/Friends"],
@@ -168,55 +187,52 @@ const defaultData = [
   ["Rashid", 2, "Family/Friends"], ["Sambath", 1, "Family/Friends"], ["Danish", 1, "Family/Friends"],
 ];
 
-function loadData() {
-  let raw = null;
-  try {
-    raw = localStorage.getItem(STORAGE_KEY);
-  } catch (e) {
-    raw = null;
-  }
-  if (raw) {
-    try { return JSON.parse(raw); } catch (e) { /* fall through */ }
-  }
+function freshDefaults() {
   return defaultData.map((item, i) => ({
     id: i, name: item[0], count: item[1], category: item[2],
     status: 'pending', confirmed: false
   }));
 }
 
-let data = loadData();
+let data = [];
 let searchTerm = '';
 let activeCategory = 'All';
+let ready = false;
 
-(function checkStorage() {
-  try {
-    const testKey = '__storage_test__';
-    localStorage.setItem(testKey, '1');
-    localStorage.removeItem(testKey);
-  } catch (e) {
-    document.addEventListener('DOMContentLoaded', () => {
-      const warn = document.getElementById('storageWarning');
-      if (warn) warn.style.display = 'block';
-    });
-  }
-})();
-
-function saveData() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    showStatus('Saved ✓', false);
-  } catch (e) {
-    showStatus('Could not save on this device — use Export to back up your list', true);
-  }
+function setBadge(state, text) {
+  const badge = document.getElementById('syncBadge');
+  badge.className = 'sync-badge ' + state;
+  document.getElementById('syncText').textContent = text;
+  document.getElementById('addBtn').disabled = (state !== 'ok');
 }
 
-function showStatus(msg, isError) {
-  const el = document.getElementById('saveStatus');
-  if (!el) return;
-  el.textContent = msg;
-  el.style.color = isError ? 'var(--danger)' : 'var(--done)';
-  clearTimeout(showStatus._t);
-  showStatus._t = setTimeout(() => { el.textContent = ''; }, 2000);
+// Real-time listener: fires immediately with current data, then again on every change from any device.
+docRef.onSnapshot(
+  (snap) => {
+    if (snap.exists && snap.data().entries) {
+      data = snap.data().entries;
+    } else if (!ready) {
+      // First time ever — seed the shared document with the default list.
+      data = freshDefaults();
+      docRef.set({ entries: data }).catch(() => {});
+    }
+    ready = true;
+    setBadge('ok', 'Synced');
+    render();
+  },
+  (err) => {
+    setBadge('err', 'Sync error — check connection');
+    console.error(err);
+  }
+);
+
+function pushUpdate() {
+  docRef.set({ entries: data })
+    .then(() => setBadge('ok', 'Synced'))
+    .catch((err) => {
+      setBadge('err', 'Could not sync — check connection');
+      console.error(err);
+    });
 }
 
 function nextId() {
@@ -290,7 +306,8 @@ function attachHandlers() {
       const id = Number(e.target.dataset.id);
       const item = data.find(d => d.id === id);
       item.category = e.target.value;
-      saveData();
+      setBadge('wait', 'Saving…');
+      pushUpdate();
       render();
     });
   });
@@ -299,7 +316,8 @@ function attachHandlers() {
       const id = Number(e.target.dataset.id);
       const item = data.find(d => d.id === id);
       item.status = e.target.value;
-      saveData();
+      setBadge('wait', 'Saving…');
+      pushUpdate();
       render();
     });
   });
@@ -308,7 +326,8 @@ function attachHandlers() {
       const id = Number(e.target.dataset.id);
       const item = data.find(d => d.id === id);
       item.confirmed = e.target.checked;
-      saveData();
+      setBadge('wait', 'Saving…');
+      pushUpdate();
       render();
     });
   });
@@ -323,7 +342,8 @@ function attachHandlers() {
       } else {
         item.name = e.target.textContent.trim();
       }
-      saveData();
+      setBadge('wait', 'Saving…');
+      pushUpdate();
       renderStats();
     });
   });
@@ -332,7 +352,8 @@ function attachHandlers() {
       const id = Number(e.target.dataset.id);
       if (confirm('Remove this entry?')) {
         data = data.filter(d => d.id !== id);
-        saveData();
+        setBadge('wait', 'Saving…');
+        pushUpdate();
         render();
       }
     });
@@ -369,16 +390,18 @@ document.getElementById('addForm').addEventListener('submit', e => {
   const category = form.category.value;
   if (!name) return;
   data.push({ id: nextId(), name, count, category, status: 'pending', confirmed: false });
-  saveData();
+  setBadge('wait', 'Saving…');
+  pushUpdate();
   form.reset();
   form.count.value = 1;
   render();
 });
 
 function resetChecks() {
-  if (!confirm('Clear all call statuses and confirmations?')) return;
+  if (!confirm('Clear all call statuses and confirmations for everyone?')) return;
   data.forEach(d => { d.status = 'pending'; d.confirmed = false; });
-  saveData();
+  setBadge('wait', 'Saving…');
+  pushUpdate();
   render();
 }
 
@@ -391,8 +414,6 @@ function exportJSON() {
   a.click();
   URL.revokeObjectURL(url);
 }
-
-render();
 </script>
 </body>
 </html>
