@@ -34,6 +34,13 @@
   td{padding:10px 12px; font-size:0.88rem; border-bottom:1px solid var(--line); vertical-align:top;}
   tbody tr:last-child td{border-bottom:none;}
   td.count{text-align:center; font-weight:600; color:var(--gold);}
+  td.act{text-align:center; width:70px;}
+  .del-btn{
+    border:none; background:#fdf1ef; color:var(--danger); font-size:0.78rem; font-weight:600;
+    padding:6px 12px; border-radius:8px; cursor:pointer;
+  }
+  .del-btn:hover{background:#fbe3e0;}
+  .del-btn:disabled{opacity:0.5; cursor:not-allowed;}
   .msg{color:var(--muted); font-size:0.8rem; font-style:italic;}
   .empty{text-align:center; color:var(--muted); padding:30px 0; font-size:0.9rem;}
   .refresh-note{font-size:0.75rem; color:var(--muted); text-align:center; margin-top:16px;}
@@ -57,7 +64,7 @@
 
 <table>
   <thead>
-    <tr><th>Name</th><th style="text-align:center;">Count</th><th>Message</th></tr>
+    <tr><th>Name</th><th style="text-align:center;">Count</th><th>Message</th><th class="act">Remove</th></tr>
   </thead>
   <tbody id="rows"></tbody>
 </table>
@@ -103,6 +110,7 @@ rsvpCol.orderBy('timestamp', 'desc').onSnapshot((snap) => {
         <td>${escapeHtml(d.name)}</td>
         <td class="count">${d.count}</td>
         <td class="msg">${d.message ? escapeHtml(d.message) : '—'}</td>
+        <td class="act"><button class="del-btn" data-id="${doc.id}">Remove</button></td>
       `;
       rowsEl.appendChild(tr);
     });
@@ -110,9 +118,27 @@ rsvpCol.orderBy('timestamp', 'desc').onSnapshot((snap) => {
 
   totalFamiliesEl.textContent = snap.size;
   totalGuestsEl.textContent = totalGuests;
+  attachDeleteHandlers();
 }, (err) => {
   console.error(err);
 });
+
+function attachDeleteHandlers() {
+  document.querySelectorAll('.del-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = e.target.dataset.id;
+      if (!confirm('Remove this RSVP? This cannot be undone.')) return;
+      e.target.disabled = true;
+      e.target.textContent = '…';
+      rsvpCol.doc(id).delete().catch((err) => {
+        alert('Could not remove — check your connection and try again.');
+        console.error(err);
+        e.target.disabled = false;
+        e.target.textContent = 'Remove';
+      });
+    });
+  });
+}
 
 function escapeHtml(str) {
   const div = document.createElement('div');
