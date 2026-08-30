@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4f46e5">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>Hayaan Birthday (3rd) — Checklist</title>
 <style>
   :root{
@@ -194,11 +197,10 @@
   <input type="text" name="name" placeholder="Name" required>
   <input type="number" name="count" placeholder="Count" min="1" value="1" required>
   <select name="category">
-    <option value="Family/Friends">Family/Friends</option>
-    <option value="Vendor">Vendor</option>
-    <option value="Government">Government</option>
-    <option value="Finance">Finance</option>
-    <option value="Other">Other</option>
+    <option value="Friends">Friends</option>
+    <option value="Family">Family</option>
+    <option value="Neighbours">Neighbours</option>
+    <option value="Work">Work</option>
   </select>
   <button type="submit" id="addBtn" disabled>Add</button>
 </form>
@@ -252,27 +254,28 @@ const db = firebase.firestore();
 const docRef = db.collection('checklist').doc('main');
 
 const defaultData = [
-  ["Home", 5, "Family/Friends"], ["Shinu", 4, "Family/Friends"], ["Devan", 4, "Family/Friends"],
-  ["Nadeera", 4, "Family/Friends"], ["LSGD", 6, "Government"], ["NREGS", 4, "Government"],
-  ["Block", 6, "Government"], ["Kudallur", 7, "Family/Friends"], ["Vasu", 3, "Family/Friends"],
-  ["Saradha", 1, "Family/Friends"], ["Radha", 2, "Family/Friends"], ["Komala", 4, "Family/Friends"],
-  ["Saru", 3, "Family/Friends"], ["Shaji", 2, "Family/Friends"], ["Girija", 4, "Family/Friends"],
-  ["Sanal", 2, "Family/Friends"], ["Viswa Maman", 2, "Family/Friends"], ["Poshukka", 2, "Family/Friends"],
-  ["Cireesh", 2, "Family/Friends"], ["Haridasan", 2, "Family/Friends"], ["Manoharan", 2, "Family/Friends"],
-  ["Valyamma", 3, "Family/Friends"], ["Vijayan Bank", 2, "Finance"], ["Devi Finance", 2, "Finance"],
-  ["Sadheesan Nakkola", 1, "Family/Friends"], ["Shyni Chechi", 1, "Family/Friends"], ["Divya", 2, "Family/Friends"],
-  ["Thanavadu", 1, "Family/Friends"], ["Rajan BSNL", 2, "Other"], ["Saji Maman", 1, "Family/Friends"],
-  ["Mukesh bhai & Team", 5, "Vendor"], ["Sudhi", 1, "Family/Friends"], ["Kadakkadayil", 2, "Family/Friends"],
-  ["Sumesh", 3, "Family/Friends"], ["Sadhiyettan", 2, "Family/Friends"], ["Prabha - Pappan", 1, "Family/Friends"],
-  ["Narayanan", 2, "Family/Friends"], ["Sundaran", 1, "Family/Friends"], ["Haridasan (2)", 1, "Family/Friends"],
-  ["Rajan", 1, "Family/Friends"], ["Sreedharan", 1, "Family/Friends"], ["Balakrishnan", 1, "Family/Friends"],
-  ["Biji", 1, "Family/Friends"], ["Ramitha", 1, "Family/Friends"], ["Subi", 1, "Family/Friends"],
-  ["Akbarkka", 1, "Family/Friends"], ["Aducha Veed", 1, "Family/Friends"], ["Shanithatha", 1, "Family/Friends"],
-  ["Aji", 2, "Family/Friends"], ["Mariyatha", 1, "Family/Friends"], ["Chadothhayil", 1, "Family/Friends"],
-  ["Kudallur Midhun & Sons", 2, "Vendor"], ["Junil", 2, "Family/Friends"], ["Alwin", 1, "Family/Friends"],
-  ["Hari", 1, "Family/Friends"], ["Gilbert", 1, "Family/Friends"], ["Fasim", 2, "Family/Friends"],
-  ["Rashid", 2, "Family/Friends"], ["Sambath", 1, "Family/Friends"], ["Danish", 1, "Family/Friends"],
-];
+  [
+    ["Home", 5, "Family"], ["Shinu", 4, "Family"], ["Devan", 4, "Friends"],
+    ["Nadeera", 4, "Family"], ["LSGD", 6, "Work"], ["NREGS", 4, "Work"],
+    ["Block", 6, "Work"], ["Kudallur", 7, "Neighbours"], ["Vasu", 3, "Family"],
+    ["Saradha", 1, "Family"], ["Radha", 2, "Family"], ["Komala", 4, "Family"],
+    ["Saru", 3, "Friends"], ["Shaji", 2, "Friends"], ["Girija", 4, "Family"],
+    ["Sanal", 2, "Friends"], ["Viswa Maman", 2, "Family"], ["Poshukka", 2, "Friends"],
+    ["Cireesh", 2, "Friends"], ["Haridasan", 2, "Neighbours"], ["Manoharan", 2, "Neighbours"],
+    ["Valyamma", 3, "Family"], ["Vijayan Bank", 2, "Work"], ["Devi Finance", 2, "Work"],
+    ["Sadheesan Nakkola", 1, "Friends"], ["Shyni Chechi", 1, "Family"], ["Divya", 2, "Friends"],
+    ["Thanavadu", 1, "Neighbours"], ["Rajan BSNL", 2, "Work"], ["Saji Maman", 1, "Family"],
+    ["Mukesh bhai & Team", 5, "Work"], ["Sudhi", 1, "Friends"], ["Kadakkadayil", 2, "Neighbours"],
+    ["Sumesh", 3, "Friends"], ["Sadhiyettan", 2, "Friends"], ["Prabha - Pappan", 1, "Family"],
+    ["Narayanan", 2, "Neighbours"], ["Sundaran", 1, "Neighbours"], ["Haridasan (2)", 1, "Neighbours"],
+    ["Rajan", 1, "Neighbours"], ["Sreedharan", 1, "Neighbours"], ["Balakrishnan", 1, "Neighbours"],
+    ["Biji", 1, "Family"], ["Ramitha", 1, "Friends"], ["Subi", 1, "Friends"],
+    ["Akbarkka", 1, "Friends"], ["Aducha Veed", 1, "Neighbours"], ["Shanithatha", 1, "Family"],
+    ["Aji", 2, "Friends"], ["Mariyatha", 1, "Friends"], ["Chadothhayil", 1, "Neighbours"],
+    ["Kudallur Midhun & Sons", 2, "Work"], ["Junil", 2, "Friends"], ["Alwin", 1, "Friends"],
+    ["Hari", 1, "Friends"], ["Gilbert", 1, "Friends"], ["Fasim", 2, "Friends"],
+    ["Rashid", 2, "Friends"], ["Sambath", 1, "Friends"], ["Danish", 1, "Friends"],
+  ];
 
 function freshDefaults() {
   return defaultData.map((item, i) => ({
@@ -365,11 +368,10 @@ function render() {
       <td class="name" contenteditable="true" data-id="${item.id}" data-field="name">${item.name}</td>
       <td class="cat">
         <select class="cat-select" data-id="${item.id}">
-          <option value="Family/Friends" ${item.category==='Family/Friends'?'selected':''}>Family/Friends</option>
-          <option value="Vendor" ${item.category==='Vendor'?'selected':''}>Vendor</option>
-          <option value="Government" ${item.category==='Government'?'selected':''}>Government</option>
-          <option value="Finance" ${item.category==='Finance'?'selected':''}>Finance</option>
-          <option value="Other" ${item.category==='Other'?'selected':''}>Other</option>
+          <option value="Friends" ${item.category==='Friends'?'selected':''}>Friends</option>
+          <option value="Family" ${item.category==='Family'?'selected':''}>Family</option>
+          <option value="Neighbours" ${item.category==='Neighbours'?'selected':''}>Neighbours</option>
+          <option value="Work" ${item.category==='Work'?'selected':''}>Work</option>
         </select>
       </td>
       <td class="num" contenteditable="true" data-id="${item.id}" data-field="count">${item.count}</td>
@@ -611,6 +613,19 @@ document.addEventListener('touchend', e => {
     indicator.style.transform = 'translateY(-100%)';
   }
 }, { passive: true });
+
+// Service Worker Registration for PWA
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(registration => {
+        console.log('SW registered:', registration.scope);
+      })
+      .catch(error => {
+        console.log('SW registration failed:', error);
+      });
+  });
+}
 </script>
 </body>
 </html>
