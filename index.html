@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4f46e5">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>Hayaan Birthday (3rd) — Checklist</title>
 <style>
   :root{
@@ -29,11 +32,11 @@
     display:flex; flex-wrap:wrap; gap:10px 18px; margin-bottom:14px; font-size:0.85rem; color:var(--muted);
   }
   .stats b{color:var(--ink);}
-  .controls{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;}
+  .controls{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; position:sticky; top:0; z-index:100; background:var(--bg); padding-top:10px;}
   .controls input[type=search]{
     flex:1; min-width:160px; padding:9px 10px; border:1px solid var(--line); border-radius:8px; font-size:0.9rem;
   }
-  .cat-filters{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px;}
+  .cat-filters{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:4px;}
   .cat-chip{
     padding:5px 11px; border-radius:999px; border:1px solid var(--line); background:#fff;
     font-size:0.78rem; color:var(--muted); cursor:pointer; white-space:nowrap;
@@ -61,7 +64,7 @@
   th.num, td.num{text-align:center;}
   th.chk, td.chk{text-align:center;}
   th.act, td.act{text-align:center; width:56px;}
-  tbody tr{border-bottom:1px solid var(--line);}
+  tbody tr{border-bottom:1px solid var(--line); position:relative; transition:background 0.2s;}
   tbody tr:last-child{border-bottom:none;}
   tbody tr.done{background:#f0fdf4;}
   tbody tr.unreachable{background:#fef2f2;}
@@ -90,14 +93,42 @@
     border-radius:8px; font-size:0.85rem; color:var(--muted); cursor:pointer;
   }
   .hint{font-size:0.75rem; color:var(--muted); margin-top:6px;}
+  
+  /* Pull to refresh indicator */
+  .pull-indicator{
+    position:fixed; top:0; left:0; right:0; height:60px; background:linear-gradient(to bottom, #e0e7ff, transparent);
+    display:flex; align-items:center; justify-content:center; transform:translateY(-100%); transition:transform 0.3s;
+    z-index:200; pointer-events:none;
+  }
+  .pull-indicator.show{transform:translateY(0);}
+  .pull-indicator span{color:var(--accent); font-weight:600; font-size:0.9rem;}
+  
+  /* Swipe action overlay for mobile */
+  .swipe-actions{
+    position:absolute; right:0; top:0; bottom:0; display:flex; opacity:0; transition:opacity 0.2s;
+    pointer-events:none;
+  }
+  .swipe-btn{
+    width:60px; height:100%; display:flex; align-items:center; justify-content:center;
+    color:#fff; font-size:1.1rem; cursor:pointer; pointer-events:auto; border:none;
+  }
+  .swipe-btn.edit{background:var(--accent);}
+  .swipe-btn.delete{background:var(--danger);}
+  tbody tr.swiping .swipe-actions{opacity:1;}
+  tbody tr{touch-action:pan-y;}
+  
+  /* Card view styles for mobile */
+  .card-view{display:none;}
+  .table-view{display:block;}
 
   /* Mobile responsive styles */
   @media (max-width: 640px) {
-    body { padding: 12px 8px 100px; font-size: 0.85rem; }
+    body { padding: 12px 8px 120px; font-size: 0.85rem; }
     h1 { font-size: 1.1rem; }
     .sub { font-size: 0.8rem; }
     .stats { gap: 6px 10px; font-size: 0.75rem; }
-    .controls input[type=search] { min-width: 100%; padding: 8px 9px; font-size: 0.85rem; }
+    .controls { padding-top:8px; }
+    .controls input[type=search] { min-width: 100%; padding: 10px 12px; font-size: 0.9rem; border-radius:10px; }
     .cat-filters { gap: 4px; margin-bottom: 10px; }
     .cat-chip { padding: 4px 8px; font-size: 0.7rem; }
     .add-form { gap: 6px; margin-bottom: 12px; }
@@ -107,29 +138,49 @@
     .add-form select[name=category] { width: 100%; flex-basis: 100%; }
     .add-form button { padding: 8px 14px; font-size: 0.85rem; width: 100%; }
     
-    /* Make table scrollable horizontally on mobile */
-    table { font-size: 0.8rem; display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    thead th { font-size: 0.65rem; padding: 8px 4px; }
-    td { padding: 6px 4px; font-size: 0.8rem; }
-    th.act, td.act { width: 40px; }
-    .del { padding: 1px 4px; font-size: 0.9rem; }
-    input[type=checkbox] { width: 16px; height: 16px; }
-    select.cat-select, select.status { padding: 4px 3px; font-size: 0.7rem; }
+    /* Hide table view on mobile, show card view */
+    .table-view{display:none;}
+    .card-view{display:block;}
+    
+    /* Card layout */
+    .card-list{display:flex; flex-direction:column; gap:10px;}
+    .card-item{
+      background:#fff; border-radius:12px; padding:14px; box-shadow:0 2px 4px rgba(0,0,0,0.08);
+      position:relative; overflow:hidden; border-left:4px solid var(--line);
+    }
+    .card-item.done{border-left-color:var(--done); background:#f0fdf4;}
+    .card-item.unreachable{border-left-color:var(--danger); background:#fef2f2;}
+    .card-item.called{border-left-color:var(--accent);}
+    .card-header{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;}
+    .card-name{font-weight:600; font-size:0.95rem; color:var(--ink); flex:1;}
+    .card-count{background:var(--accent); color:#fff; padding:2px 8px; border-radius:999px; font-size:0.75rem; font-weight:600;}
+    .card-category{font-size:0.7rem; color:var(--muted); background:#f3f4f6; padding:2px 8px; border-radius:4px; display:inline-block; margin-bottom:8px;}
+    .card-row{display:flex; align-items:center; justify-content:space-between; margin-top:6px;}
+    .card-row label{font-size:0.7rem; color:var(--muted);}
+    .card-row select{padding:4px 6px; border-radius:6px; border:1px solid var(--line); font-size:0.75rem; background:#fff;}
+    .card-actions{display:flex; gap:8px; margin-top:10px; padding-top:10px; border-top:1px solid var(--line);}
+    .card-actions button{flex:1; padding:8px; border:none; border-radius:8px; font-size:0.8rem; cursor:pointer;}
+    .card-actions .btn-confirm{background:var(--done); color:#fff;}
+    .card-actions .btn-edit{background:var(--accent); color:#fff;}
+    .card-actions .btn-delete{background:var(--danger); color:#fff;}
+    .card-item.confirmed .btn-confirm{background:#15803d;}
     
     .toolbar { gap: 6px; }
-    .toolbar button { padding: 6px 10px; font-size: 0.8rem; flex: 1 1 calc(50% - 3px); }
+    .toolbar button { padding: 8px 12px; font-size: 0.8rem; flex: 1 1 calc(50% - 3px); }
     .hint { font-size: 0.7rem; }
   }
-
+  
   @media print{
     body{padding:0; background:#fff;}
-    .controls, .cat-filters, .add-form, .toolbar, .hint, .sync-badge, td.act, th.act{display:none !important;}
+    .controls, .cat-filters, .add-form, .toolbar, .hint, .sync-badge, td.act, th.act, .card-view{display:none !important;}
     table{box-shadow:none;}
     select.status, select.cat-select{border:none; background:none; -webkit-appearance:none; appearance:none;}
   }
 </style>
 </head>
 <body>
+
+<div class="pull-indicator" id="pullIndicator"><span>Pulling to refresh...</span></div>
 
 <h1>Hayaan's 3rd Birthday — Guest &amp; Vendor Checklist</h1>
 <div class="sub">Search, filter by category, mark call status, and check off confirmed. Synced live across every device.</div>
@@ -146,15 +197,16 @@
   <input type="text" name="name" placeholder="Name" required>
   <input type="number" name="count" placeholder="Count" min="1" value="1" required>
   <select name="category">
-    <option value="Family/Friends">Family/Friends</option>
-    <option value="Vendor">Vendor</option>
-    <option value="Government">Government</option>
-    <option value="Finance">Finance</option>
-    <option value="Other">Other</option>
+    <option value="Friends">Friends</option>
+    <option value="Family">Family</option>
+    <option value="Neighbours">Neighbours</option>
+    <option value="Work">Work</option>
   </select>
   <button type="submit" id="addBtn" disabled>Add</button>
 </form>
 
+<!-- Table view for desktop -->
+<div class="table-view">
 <table>
   <thead>
     <tr>
@@ -169,6 +221,13 @@
   </thead>
   <tbody id="rows"></tbody>
 </table>
+</div>
+
+<!-- Card view for mobile -->
+<div class="card-view">
+  <div class="card-list" id="cardList"></div>
+</div>
+
 <div class="hint">Click a name or count to edit it inline. Use the Category and Status dropdowns to change either per person. Changes sync to every device automatically.</div>
 
 <div class="toolbar">
@@ -195,27 +254,28 @@ const db = firebase.firestore();
 const docRef = db.collection('checklist').doc('main');
 
 const defaultData = [
-  ["Home", 5, "Family/Friends"], ["Shinu", 4, "Family/Friends"], ["Devan", 4, "Family/Friends"],
-  ["Nadeera", 4, "Family/Friends"], ["LSGD", 6, "Government"], ["NREGS", 4, "Government"],
-  ["Block", 6, "Government"], ["Kudallur", 7, "Family/Friends"], ["Vasu", 3, "Family/Friends"],
-  ["Saradha", 1, "Family/Friends"], ["Radha", 2, "Family/Friends"], ["Komala", 4, "Family/Friends"],
-  ["Saru", 3, "Family/Friends"], ["Shaji", 2, "Family/Friends"], ["Girija", 4, "Family/Friends"],
-  ["Sanal", 2, "Family/Friends"], ["Viswa Maman", 2, "Family/Friends"], ["Poshukka", 2, "Family/Friends"],
-  ["Cireesh", 2, "Family/Friends"], ["Haridasan", 2, "Family/Friends"], ["Manoharan", 2, "Family/Friends"],
-  ["Valyamma", 3, "Family/Friends"], ["Vijayan Bank", 2, "Finance"], ["Devi Finance", 2, "Finance"],
-  ["Sadheesan Nakkola", 1, "Family/Friends"], ["Shyni Chechi", 1, "Family/Friends"], ["Divya", 2, "Family/Friends"],
-  ["Thanavadu", 1, "Family/Friends"], ["Rajan BSNL", 2, "Other"], ["Saji Maman", 1, "Family/Friends"],
-  ["Mukesh bhai & Team", 5, "Vendor"], ["Sudhi", 1, "Family/Friends"], ["Kadakkadayil", 2, "Family/Friends"],
-  ["Sumesh", 3, "Family/Friends"], ["Sadhiyettan", 2, "Family/Friends"], ["Prabha - Pappan", 1, "Family/Friends"],
-  ["Narayanan", 2, "Family/Friends"], ["Sundaran", 1, "Family/Friends"], ["Haridasan (2)", 1, "Family/Friends"],
-  ["Rajan", 1, "Family/Friends"], ["Sreedharan", 1, "Family/Friends"], ["Balakrishnan", 1, "Family/Friends"],
-  ["Biji", 1, "Family/Friends"], ["Ramitha", 1, "Family/Friends"], ["Subi", 1, "Family/Friends"],
-  ["Akbarkka", 1, "Family/Friends"], ["Aducha Veed", 1, "Family/Friends"], ["Shanithatha", 1, "Family/Friends"],
-  ["Aji", 2, "Family/Friends"], ["Mariyatha", 1, "Family/Friends"], ["Chadothhayil", 1, "Family/Friends"],
-  ["Kudallur Midhun & Sons", 2, "Vendor"], ["Junil", 2, "Family/Friends"], ["Alwin", 1, "Family/Friends"],
-  ["Hari", 1, "Family/Friends"], ["Gilbert", 1, "Family/Friends"], ["Fasim", 2, "Family/Friends"],
-  ["Rashid", 2, "Family/Friends"], ["Sambath", 1, "Family/Friends"], ["Danish", 1, "Family/Friends"],
-];
+  [
+    ["Home", 5, "Family"], ["Shinu", 4, "Family"], ["Devan", 4, "Friends"],
+    ["Nadeera", 4, "Family"], ["LSGD", 6, "Work"], ["NREGS", 4, "Work"],
+    ["Block", 6, "Work"], ["Kudallur", 7, "Neighbours"], ["Vasu", 3, "Family"],
+    ["Saradha", 1, "Family"], ["Radha", 2, "Family"], ["Komala", 4, "Family"],
+    ["Saru", 3, "Friends"], ["Shaji", 2, "Friends"], ["Girija", 4, "Family"],
+    ["Sanal", 2, "Friends"], ["Viswa Maman", 2, "Family"], ["Poshukka", 2, "Friends"],
+    ["Cireesh", 2, "Friends"], ["Haridasan", 2, "Neighbours"], ["Manoharan", 2, "Neighbours"],
+    ["Valyamma", 3, "Family"], ["Vijayan Bank", 2, "Work"], ["Devi Finance", 2, "Work"],
+    ["Sadheesan Nakkola", 1, "Friends"], ["Shyni Chechi", 1, "Family"], ["Divya", 2, "Friends"],
+    ["Thanavadu", 1, "Neighbours"], ["Rajan BSNL", 2, "Work"], ["Saji Maman", 1, "Family"],
+    ["Mukesh bhai & Team", 5, "Work"], ["Sudhi", 1, "Friends"], ["Kadakkadayil", 2, "Neighbours"],
+    ["Sumesh", 3, "Friends"], ["Sadhiyettan", 2, "Friends"], ["Prabha - Pappan", 1, "Family"],
+    ["Narayanan", 2, "Neighbours"], ["Sundaran", 1, "Neighbours"], ["Haridasan (2)", 1, "Neighbours"],
+    ["Rajan", 1, "Neighbours"], ["Sreedharan", 1, "Neighbours"], ["Balakrishnan", 1, "Neighbours"],
+    ["Biji", 1, "Family"], ["Ramitha", 1, "Friends"], ["Subi", 1, "Friends"],
+    ["Akbarkka", 1, "Friends"], ["Aducha Veed", 1, "Neighbours"], ["Shanithatha", 1, "Family"],
+    ["Aji", 2, "Friends"], ["Mariyatha", 1, "Friends"], ["Chadothhayil", 1, "Neighbours"],
+    ["Kudallur Midhun & Sons", 2, "Work"], ["Junil", 2, "Friends"], ["Alwin", 1, "Friends"],
+    ["Hari", 1, "Friends"], ["Gilbert", 1, "Friends"], ["Fasim", 2, "Friends"],
+    ["Rashid", 2, "Friends"], ["Sambath", 1, "Friends"], ["Danish", 1, "Friends"],
+  ];
 
 function freshDefaults() {
   return defaultData.map((item, i) => ({
@@ -295,9 +355,11 @@ function filteredData() {
 
 function render() {
   renderFilters();
+  const list = filteredData();
+  
+  // Render table view (desktop)
   const tbody = document.getElementById('rows');
   tbody.innerHTML = '';
-  const list = filteredData();
   list.forEach((item, idx) => {
     const tr = document.createElement('tr');
     tr.className = item.confirmed ? 'done' : (item.status === 'unreachable' ? 'unreachable' : '');
@@ -306,11 +368,10 @@ function render() {
       <td class="name" contenteditable="true" data-id="${item.id}" data-field="name">${item.name}</td>
       <td class="cat">
         <select class="cat-select" data-id="${item.id}">
-          <option value="Family/Friends" ${item.category==='Family/Friends'?'selected':''}>Family/Friends</option>
-          <option value="Vendor" ${item.category==='Vendor'?'selected':''}>Vendor</option>
-          <option value="Government" ${item.category==='Government'?'selected':''}>Government</option>
-          <option value="Finance" ${item.category==='Finance'?'selected':''}>Finance</option>
-          <option value="Other" ${item.category==='Other'?'selected':''}>Other</option>
+          <option value="Friends" ${item.category==='Friends'?'selected':''}>Friends</option>
+          <option value="Family" ${item.category==='Family'?'selected':''}>Family</option>
+          <option value="Neighbours" ${item.category==='Neighbours'?'selected':''}>Neighbours</option>
+          <option value="Work" ${item.category==='Work'?'selected':''}>Work</option>
         </select>
       </td>
       <td class="num" contenteditable="true" data-id="${item.id}" data-field="count">${item.count}</td>
@@ -326,6 +387,36 @@ function render() {
     `;
     tbody.appendChild(tr);
   });
+  
+  // Render card view (mobile)
+  const cardList = document.getElementById('cardList');
+  cardList.innerHTML = '';
+  list.forEach((item, idx) => {
+    const card = document.createElement('div');
+    card.className = `card-item${item.confirmed ? ' done confirmed' : ''}${item.status === 'unreachable' ? ' unreachable' : ''}${item.status === 'called' && !item.confirmed ? ' called' : ''}`;
+    card.innerHTML = `
+      <div class="card-header">
+        <div class="card-name">${item.name}</div>
+        <div class="card-count">${item.count}</div>
+      </div>
+      <div class="card-category">${item.category}</div>
+      <div class="card-row">
+        <label>Status:</label>
+        <select class="status ${item.status}" data-id="${item.id}">
+          <option value="pending" ${item.status==='pending'?'selected':''}>Pending</option>
+          <option value="called" ${item.status==='called'?'selected':''}>Called</option>
+          <option value="unreachable" ${item.status==='unreachable'?'selected':''}>Not reachable</option>
+        </select>
+      </div>
+      <div class="card-actions">
+        <button class="btn-confirm" data-id="${item.id}">${item.confirmed ? '✓ Confirmed' : 'Confirm'}</button>
+        <button class="btn-edit" data-id="${item.id}">Edit</button>
+        <button class="btn-delete" data-id="${item.id}">Delete</button>
+      </div>
+    `;
+    cardList.appendChild(card);
+  });
+  
   attachHandlers();
   renderStats();
 }
@@ -359,6 +450,43 @@ function attachHandlers() {
       setBadge('wait', 'Saving…');
       pushUpdate();
       render();
+    });
+  });
+  // Card view confirm button handler
+  document.querySelectorAll('.btn-confirm').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const id = Number(e.target.dataset.id);
+      const item = data.find(d => d.id === id);
+      item.confirmed = !item.confirmed;
+      setBadge('wait', 'Saving…');
+      pushUpdate();
+      render();
+    });
+  });
+  // Card view edit button handler - makes name editable
+  document.querySelectorAll('.btn-edit').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const id = Number(e.target.dataset.id);
+      const item = data.find(d => d.id === id);
+      const newName = prompt('Edit name:', item.name);
+      if (newName !== null && newName.trim() !== '') {
+        item.name = newName.trim();
+        setBadge('wait', 'Saving…');
+        pushUpdate();
+        render();
+      }
+    });
+  });
+  // Card view delete button handler
+  document.querySelectorAll('.btn-delete').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const id = Number(e.target.dataset.id);
+      if (confirm('Remove this entry?')) {
+        data = data.filter(d => d.id !== id);
+        setBadge('wait', 'Saving…');
+        pushUpdate();
+        render();
+      }
     });
   });
   document.querySelectorAll('td[contenteditable]').forEach(td => {
@@ -443,6 +571,60 @@ function exportJSON() {
   a.download = 'hayaan-birthday-checklist.json';
   a.click();
   URL.revokeObjectURL(url);
+}
+
+// Pull to refresh functionality
+let touchStartY = 0;
+let pullRefreshEnabled = true;
+
+document.addEventListener('touchstart', e => {
+  if (window.scrollY === 0) {
+    touchStartY = e.touches[0].clientY;
+  }
+}, { passive: true });
+
+document.addEventListener('touchmove', e => {
+  if (!pullRefreshEnabled || window.scrollY > 0) return;
+  const touchY = e.touches[0].clientY;
+  const diff = touchY - touchStartY;
+  if (diff > 0 && diff < 150) {
+    const indicator = document.getElementById('pullIndicator');
+    indicator.style.transform = `translateY(${diff - 60}px)`;
+    if (diff > 100) {
+      indicator.classList.add('show');
+    } else {
+      indicator.classList.remove('show');
+    }
+  }
+}, { passive: true });
+
+document.addEventListener('touchend', e => {
+  if (!pullRefreshEnabled) return;
+  const indicator = document.getElementById('pullIndicator');
+  if (indicator.classList.contains('show')) {
+    // Trigger refresh
+    indicator.querySelector('span').textContent = 'Refreshing...';
+    setTimeout(() => {
+      indicator.classList.remove('show');
+      indicator.querySelector('span').textContent = 'Pulling to refresh...';
+      render();
+    }, 800);
+  } else {
+    indicator.style.transform = 'translateY(-100%)';
+  }
+}, { passive: true });
+
+// Service Worker Registration for PWA
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(registration => {
+        console.log('SW registered:', registration.scope);
+      })
+      .catch(error => {
+        console.log('SW registration failed:', error);
+      });
+  });
 }
 </script>
 </body>
