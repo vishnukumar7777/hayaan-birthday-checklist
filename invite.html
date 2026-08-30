@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hayaan's 3rd Birthday — You're Invited</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Cormorant+Garamond:ital@0;1&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#faf6f0; --card:#ffffff; --ink:#2f2a26; --muted:#8a7f74;
+    --gold:#b8935f; --gold-light:#e8d9c4; --line:#ece4da; --line2:#eee3d6;
+    --danger:#c0533e;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--cream); color:var(--ink);
+    font-family:'Poppins', sans-serif; padding:0 0 60px;
+  }
+  .hero{
+    background:linear-gradient(180deg, #fffaf3 0%, var(--cream) 100%);
+    padding:48px 20px 30px; text-align:center; position:relative;
+  }
+  .ornament{
+    font-size:1.6rem; color:var(--gold); letter-spacing:4px; margin-bottom:6px;
+  }
+  .eyebrow{
+    font-size:0.72rem; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-bottom:14px;
+  }
+  .photo-wrap{
+    width:168px; height:168px; margin:0 auto 22px; border-radius:50%;
+    border:3px solid var(--gold-light); padding:6px; position:relative;
+  }
+  .photo-inner{
+    width:100%; height:100%; border-radius:50%; overflow:hidden; background:#f3ece2;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .photo-inner img{width:100%; height:100%; object-fit:cover; display:block;}
+  .photo-placeholder{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    color:var(--gold); gap:6px;
+  }
+  .photo-placeholder svg{width:38px; height:38px; opacity:0.55;}
+  .photo-placeholder span{font-size:0.65rem; color:var(--muted); letter-spacing:0.5px;}
+
+  h1{
+    font-family:'Playfair Display', serif; font-weight:600; font-size:1.9rem; margin:0 0 6px;
+    color:var(--ink);
+  }
+  .subname{
+    font-family:'Cormorant Garamond', serif; font-style:italic; font-size:1.15rem; color:var(--gold); margin-bottom:22px;
+  }
+  .divider{
+    width:56px; height:1px; background:var(--gold-light); margin:22px auto;
+  }
+  .blessing{
+    max-width:420px; margin:0 auto 6px; font-size:0.92rem; line-height:1.7; color:#5c5349;
+    font-family:'Cormorant Garamond', serif; font-size:1.15rem;
+  }
+
+  .card{
+    max-width:480px; margin:26px auto 0; background:var(--card); border-radius:16px;
+    box-shadow:0 6px 24px rgba(90,70,40,0.06); padding:28px 24px;
+  }
+  .detail-row{
+    display:flex; align-items:flex-start; gap:14px; padding:12px 0; border-bottom:1px solid var(--line2);
+  }
+  .detail-row:last-child{border-bottom:none;}
+  .detail-icon{
+    width:34px; height:34px; border-radius:50%; background:#faf3e8; color:var(--gold);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .detail-icon svg{width:17px; height:17px;}
+  .detail-label{font-size:0.7rem; text-transform:uppercase; letter-spacing:1px; color:var(--muted); margin-bottom:2px;}
+  .detail-value{font-size:0.95rem; color:var(--ink); font-weight:500;}
+  .detail-sub{font-size:0.82rem; color:var(--muted); margin-top:2px;}
+
+  .map-btn{
+    display:inline-flex; align-items:center; gap:6px; margin-top:8px; padding:8px 16px;
+    background:var(--ink); color:#fff; text-decoration:none; border-radius:999px; font-size:0.82rem;
+  }
+
+  .section-title{
+    text-align:center; font-family:'Playfair Display', serif; font-size:1.15rem; margin:36px 0 4px;
+  }
+  .section-sub{text-align:center; font-size:0.82rem; color:var(--muted); margin-bottom:18px;}
+
+  .rsvp-form{max-width:480px; margin:0 auto; background:var(--card); border-radius:16px; padding:24px; box-shadow:0 6px 24px rgba(90,70,40,0.06);}
+  .rsvp-form label{font-size:0.78rem; color:var(--muted); display:block; margin-bottom:5px; margin-top:14px;}
+  .rsvp-form label:first-of-type{margin-top:0;}
+  .rsvp-form input, .rsvp-form textarea{
+    width:100%; padding:11px 12px; border:1px solid var(--line); border-radius:10px; font-size:0.92rem;
+    font-family:inherit; background:#fdfcfa;
+  }
+  .rsvp-form textarea{resize:vertical; min-height:60px;}
+  .rsvp-submit{
+    width:100%; margin-top:18px; padding:13px; border:none; border-radius:999px;
+    background:var(--gold); color:#fff; font-size:0.92rem; font-weight:500; cursor:pointer;
+    letter-spacing:0.4px;
+  }
+  .rsvp-submit:disabled{opacity:0.6; cursor:not-allowed;}
+  .rsvp-msg{text-align:center; font-size:0.82rem; margin-top:12px; min-height:1em;}
+  .rsvp-msg.ok{color:#3d7a4f;}
+  .rsvp-msg.err{color:var(--danger);}
+
+  .headcount{
+    max-width:480px; margin:22px auto 0; text-align:center; font-size:0.85rem; color:var(--muted);
+  }
+  .headcount b{color:var(--gold); font-size:1.1rem;}
+
+  .guest-list{max-width:480px; margin:18px auto 0;}
+  .guest-item{
+    display:flex; justify-content:space-between; padding:10px 16px; background:#fff; border-radius:10px;
+    margin-bottom:8px; font-size:0.85rem; box-shadow:0 1px 4px rgba(90,70,40,0.04);
+  }
+  .guest-item span.count{color:var(--gold); font-weight:600;}
+
+  .contact-strip{
+    max-width:480px; margin:30px auto 0; text-align:center; font-size:0.82rem; color:var(--muted);
+  }
+  .contact-strip a{color:var(--ink); text-decoration:none; font-weight:500;}
+  footer{text-align:center; margin-top:34px; font-size:0.72rem; color:var(--muted); letter-spacing:0.5px;}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="ornament">✦ ✦ ✦</div>
+  <div class="eyebrow">You are lovingly invited to</div>
+
+  <div class="photo-wrap">
+    <div class="photo-inner">
+      <img id="babyPhoto" src="hayaan.jpg" alt="Hayaan"
+           onerror="this.style.display='none'; document.getElementById('photoPlaceholder').style.display='flex';">
+      <div class="photo-placeholder" id="photoPlaceholder">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.5-7 8-7s8 3 8 7"/></svg>
+        <span>Photo coming soon</span>
+      </div>
+    </div>
+  </div>
+
+  <h1>Hayaan Adam Vishnu</h1>
+  <div class="subname">is turning three ✿</div>
+
+  <div class="divider"></div>
+  <p class="blessing">
+    Three years of giggles, wonder, and joy — and we'd love nothing more than to celebrate this little
+    milestone surrounded by the people who mean the most to us. Come shower our little one with your
+    love and blessings.
+  </p>
+</div>
+
+<div class="card">
+  <div class="detail-row">
+    <div class="detail-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
+    </div>
+    <div>
+      <div class="detail-label">Date</div>
+      <div class="detail-value">Tuesday, 1st September 2026</div>
+    </div>
+  </div>
+  <div class="detail-row">
+    <div class="detail-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+    </div>
+    <div>
+      <div class="detail-label">Time</div>
+      <div class="detail-value">11:00 AM onwards</div>
+    </div>
+  </div>
+  <div class="detail-row">
+    <div class="detail-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21s7-6.5 7-12a7 7 0 10-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.4"/></svg>
+    </div>
+    <div>
+      <div class="detail-label">Venue</div>
+      <div class="detail-value">Home — Poongattayil Group</div>
+      <div class="detail-sub"></div>
+      <a class="map-btn" href="https://maps.app.goo.gl/fUsSERWr4GqLJ1ez9" target="_blank" rel="noopener">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-6.5 7-12a7 7 0 10-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.4"/></svg>
+        View on Google Maps
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="section-title">Will you be joining us?</div>
+<div class="section-sub">Let us know how many will be coming, so we can welcome you warmly.</div>
+
+<form class="rsvp-form" id="rsvpForm">
+  <label>Your Name / Family Name</label>
+  <input type="text" id="rsvpName" placeholder="e.g. Suresh Family" required>
+
+  <label>Number of Members Attending</label>
+  <input type="number" id="rsvpCount" min="1" value="1" required>
+
+  <label>Message / Blessing (optional)</label>
+  <textarea id="rsvpMessage" placeholder="Leave a wish for Hayaan..."></textarea>
+
+  <button type="submit" class="rsvp-submit" id="rsvpSubmit">Confirm Attendance</button>
+  <div class="rsvp-msg" id="rsvpStatus"></div>
+</form>
+
+<div class="contact-strip">
+  For any queries, feel free to reach out<br>
+  <a href="tel:+919645777743">+91-9645777743</a>
+</div>
+
+<footer>With love, Hayaan's Family ✦</footer>
+
+<!-- Firebase (compat build — no bundler needed) -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyB35tEvhwekiIhsT8D4vZVpdXUIBj8z768",
+  authDomain: "hayaan-birthday.firebaseapp.com",
+  projectId: "hayaan-birthday",
+  storageBucket: "hayaan-birthday.firebasestorage.app",
+  messagingSenderId: "905808235056",
+  appId: "1:905808235056:web:6feb88368bf8db2ffdfbf5"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const rsvpCol = db.collection('rsvps');
+
+const form = document.getElementById('rsvpForm');
+const submitBtn = document.getElementById('rsvpSubmit');
+const statusEl = document.getElementById('rsvpStatus');
+
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const name = document.getElementById('rsvpName').value.trim();
+  const count = parseInt(document.getElementById('rsvpCount').value, 10) || 1;
+  const message = document.getElementById('rsvpMessage').value.trim();
+  if (!name) return;
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Sending…';
+
+  rsvpCol.add({
+    name, count, message,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(() => {
+    statusEl.textContent = 'Thank you! Your attendance is confirmed. 🎉';
+    statusEl.className = 'rsvp-msg ok';
+    form.reset();
+    document.getElementById('rsvpCount').value = 1;
+  }).catch((err) => {
+    statusEl.textContent = 'Could not send — please check your connection and try again.';
+    statusEl.className = 'rsvp-msg err';
+    console.error(err);
+  }).finally(() => {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Confirm Attendance';
+  });
+});
+
+// Note: live guest headcount/list is intentionally NOT shown on this public
+// invite page — see the separate rsvp-dashboard.html for that (private, for the host only).
+</script>
+</body>
+</html>

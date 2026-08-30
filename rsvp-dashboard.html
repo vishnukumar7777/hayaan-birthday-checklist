@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hayaan's Birthday — RSVP Dashboard (Private)</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#faf6f0; --card:#ffffff; --ink:#2f2a26; --muted:#8a7f74;
+    --gold:#b8935f; --gold-light:#e8d9c4; --line:#eee3d6; --danger:#c0533e;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--cream); color:var(--ink); font-family:'Poppins', sans-serif;
+    padding:30px 16px 60px; max-width:640px; margin-left:auto; margin-right:auto;
+  }
+  h1{font-family:'Playfair Display', serif; font-size:1.4rem; margin:0 0 4px;}
+  .sub{color:var(--muted); font-size:0.85rem; margin-bottom:22px;}
+  .summary{
+    display:flex; gap:14px; margin-bottom:20px; flex-wrap:wrap;
+  }
+  .stat-card{
+    flex:1; min-width:130px; background:var(--card); border-radius:14px; padding:18px;
+    text-align:center; box-shadow:0 4px 16px rgba(90,70,40,0.06);
+  }
+  .stat-card .num{font-size:1.6rem; font-weight:600; color:var(--gold);}
+  .stat-card .label{font-size:0.75rem; color:var(--muted); margin-top:4px;}
+  table{width:100%; border-collapse:collapse; background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 4px 16px rgba(90,70,40,0.06);}
+  thead th{
+    text-align:left; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted);
+    padding:10px 12px; border-bottom:1px solid var(--line);
+  }
+  td{padding:10px 12px; font-size:0.88rem; border-bottom:1px solid var(--line); vertical-align:top;}
+  tbody tr:last-child td{border-bottom:none;}
+  td.count{text-align:center; font-weight:600; color:var(--gold);}
+  .msg{color:var(--muted); font-size:0.8rem; font-style:italic;}
+  .empty{text-align:center; color:var(--muted); padding:30px 0; font-size:0.9rem;}
+  .refresh-note{font-size:0.75rem; color:var(--muted); text-align:center; margin-top:16px;}
+</style>
+</head>
+<body>
+
+<h1>RSVP Dashboard — Private</h1>
+<div class="sub">Live responses from Hayaan's birthday invite. This page is not linked anywhere for guests.</div>
+
+<div class="summary">
+  <div class="stat-card">
+    <div class="num" id="totalFamilies">–</div>
+    <div class="label">Families / Groups Confirmed</div>
+  </div>
+  <div class="stat-card">
+    <div class="num" id="totalGuests">–</div>
+    <div class="label">Total Guests</div>
+  </div>
+</div>
+
+<table>
+  <thead>
+    <tr><th>Name</th><th style="text-align:center;">Count</th><th>Message</th></tr>
+  </thead>
+  <tbody id="rows"></tbody>
+</table>
+<div class="empty" id="emptyState" style="display:none;">No RSVPs yet — check back after sharing the invite.</div>
+
+<div class="refresh-note">This list updates live — no need to refresh.</div>
+
+<!-- Firebase (compat build) -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyB35tEvhwekiIhsT8D4vZVpdXUIBj8z768",
+  authDomain: "hayaan-birthday.firebaseapp.com",
+  projectId: "hayaan-birthday",
+  storageBucket: "hayaan-birthday.firebasestorage.app",
+  messagingSenderId: "905808235056",
+  appId: "1:905808235056:web:6feb88368bf8db2ffdfbf5"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const rsvpCol = db.collection('rsvps');
+
+const rowsEl = document.getElementById('rows');
+const emptyEl = document.getElementById('emptyState');
+const totalFamiliesEl = document.getElementById('totalFamilies');
+const totalGuestsEl = document.getElementById('totalGuests');
+
+rsvpCol.orderBy('timestamp', 'desc').onSnapshot((snap) => {
+  rowsEl.innerHTML = '';
+  let totalGuests = 0;
+
+  if (snap.empty) {
+    emptyEl.style.display = 'block';
+  } else {
+    emptyEl.style.display = 'none';
+    snap.forEach((doc) => {
+      const d = doc.data();
+      totalGuests += Number(d.count) || 0;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${escapeHtml(d.name)}</td>
+        <td class="count">${d.count}</td>
+        <td class="msg">${d.message ? escapeHtml(d.message) : '—'}</td>
+      `;
+      rowsEl.appendChild(tr);
+    });
+  }
+
+  totalFamiliesEl.textContent = snap.size;
+  totalGuestsEl.textContent = totalGuests;
+}, (err) => {
+  console.error(err);
+});
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+</script>
+</body>
+</html>
