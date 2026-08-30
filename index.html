@@ -284,8 +284,7 @@ function freshDefaults() {
 }
 
 // Name → category lookup, used to migrate any entries still holding old
-// category values (Family/Friends, Government, Finance, Vendor, Other)
-// back to the current 4-category scheme.
+// category values back to the current 4-category scheme.
 const nameToCategory = {};
 defaultData.forEach(item => { nameToCategory[item[0]] = item[2]; });
 const VALID_CATEGORIES = ['Family', 'Friends', 'Neighbours', 'Work'];
@@ -352,7 +351,7 @@ function nextId() {
 }
 
 function getCategories() {
-  return ['All', ...new Set(data.map(d => d.category || 'Other'))];
+  return ['All', 'Family', 'Friends', 'Neighbours', 'Work'];
 }
 
 function renderFilters() {
